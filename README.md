@@ -1,33 +1,24 @@
-# Vault (offline password manager, Android)
+# 🔐 Offline Vault
 
-- 100% offline. No account, no network calls, no analytics.
-- Master password -> PBKDF2-SHA256 (600k iterations) -> AES-256-GCM. Only ciphertext is stored.
-- Screenshots blocked (FLAG_SECURE), Android cloud backup disabled, auto-lock, clipboard cleared after 30 s.
-- Arabic (RTL) and English.
-- v2: profiles, secure notes, password-change timestamps and history, activity log, security check, encrypted backups with their own password. Vaults created with v1 open and upgrade automatically.
+A password manager that never goes online. No account, no server, no analytics,
+no network permission. Your passwords live encrypted on your phone and nowhere else.
 
-## Build the APK (no Android Studio needed)
-1. Create a GitHub repo and upload this folder's contents (keep .github/workflows).
-2. Actions tab -> "Build APK" -> Run workflow.
-3. Download the `vault-apk` artifact, unzip, install app-debug.apk on the phone.
-
-## Build locally
-npm install && npx cap add android
-(then apply the two edits shown in .github/workflows/build-apk.yml)
-npx cap sync android && cd android && ./gradlew assembleDebug
+## Features
+- **Fully offline:** the app makes zero network calls; fonts and assets ship inside the APK
+- **Strong encryption:** AES-256-GCM, key derived from your master password with PBKDF2-SHA-256 (600,000 iterations)
+- **Encrypted backups:** export to a password-protected file via the Android share sheet; import on a new phone
+- **Accounts, notes and profiles**, with a password generator and a weak/reused/old password check
+- **Auto-lock** when you leave the app, plus failed-attempt tracking and an activity log
+- **Arabic and English** (RTL/LTR), with light and dark themes
+- **"Abyss & Aurora" UI:** glass surfaces, animated lock dial, screen transitions; respects "reduce motion"
 
 ## Important
-- A forgotten master password cannot be recovered.
-- Uninstalling the app or clearing its data deletes the vault. Use Settings -> Export encrypted backup regularly and keep the file somewhere safe.
+- Your master password **cannot be recovered**. If you forget it, the data is gone.
+- Export a backup before changing phones. Reinstalling or switching devices does not carry the vault over.
 
-## v2.1
-- New vault-dial app icon (icons/res is copied into the Android project by the workflow).
-- Vault tab: List (editable) / Overview (read-only tree: profile > app > accounts). Accounts have an optional label (main, secondary, 1, 2...).
+## Build
+The APK is built by GitHub Actions (`.github/workflows/build-apk.yml`).
+Run the "Build APK" workflow and download the artifact.
 
-## v3 - new look ("Abyss & Aurora")
-- New icon (gradient dial + glowing keyhole), adaptive + themed (Android 13) + round + launch screen. Regenerate or recolor: `python3 tools/make_icons.py`.
-- New UI: midnight base, teal>blue>violet accent, glass surfaces, screen transitions, animated lock dial (shakes red on a wrong password, flares open on success), colour-coded generator output.
-- Fonts are bundled in `www/fonts` (Outfit + JetBrains Mono, OFL licence files included). Still zero network calls. Arabic uses the phone's built-in Noto Arabic.
-- Respects the system "reduce motion" setting and light/dark mode.
-- Existing vaults open unchanged; old profile colours are mapped to the new palette on display.
-- v3.2: backup export now opens the Android share sheet (uses @capacitor/filesystem + @capacitor/share), so you choose where the file is saved.
+## Credits
+Fonts: Outfit and JetBrains Mono (SIL OFL, licenses in `www/fonts`).
