@@ -1,0 +1,54 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - run: npm install
+      - run: npx cap add android
+      - name: Harden Android (block screenshots, disable system backup)
+        run: |
+          cat > android/app/src/main/java/com/vault/offline/MainActivity.java <<'JAVA'
+          package com.vault.offline;
+          import android.content.res.Configuration;
+          import android.graphics.Color;
+          import android.os.Bundle;
+          import android.view.WindowManager;
+          import androidx.core.view.WindowCompat;
+          import androidx.core.view.WindowInsetsControllerCompat;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+            @Override public void onCreate(Bundle b) {
+              super.onCreate(b);
+              getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+              // system bars + WebView background match the app theme (no white flash, no mismatched bars)
+              boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+              int c = Color.parseColor(night ? "#060A16" : "#E7EDF9");
+              getWindow().setStatusBarColor(c);
+              getWindow().setNavigationBarColor(c);
+              WindowInsetsControllerCompat ic = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+              ic.setAppearanceLightStatusBars(!night);
+              ic.setAppearanceLightNavigationBars(!night);
+              getBridge().getWebView().setBackgroundColor(c);
+            }
+          }
+          JAVA
+          sed -i 's/android:allowBackup="true"/android:allowBackup="false"/' android/app/src/main/AndroidManifest.xml
+      - name: Apply app icon and launch screen
+        run: |
+          find android/app/src/main/res -name 'splash*.png' -delete
+          cp -r icons/res/* android/app/src/main/res/
+      - run: npx cap sync android
+      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vault-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
